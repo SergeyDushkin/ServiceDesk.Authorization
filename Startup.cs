@@ -10,6 +10,8 @@ using IdentityServerWithAspNetIdentity.Models;
 using IdentityServerWithAspNetIdentity.Services;
 using Microsoft.AspNetCore.Identity;
 using Serilog;
+using System.Security.Cryptography.X509Certificates;
+using System.IO;
 
 namespace IdentityServerWithAspNetIdentity
 {
@@ -24,8 +26,10 @@ namespace IdentityServerWithAspNetIdentity
 
             builder.AddEnvironmentVariables();
             Configuration = builder.Build();
+            Environment = env;
         }
 
+        private IHostingEnvironment Environment { get; }
         public IConfigurationRoot Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -45,8 +49,11 @@ namespace IdentityServerWithAspNetIdentity
             services.AddTransient<IEmailSender, AuthMessageSender>();
             services.AddTransient<ISmsSender, AuthMessageSender>();
 
+            var cert = new X509Certificate2(Path.Combine(Environment.ContentRootPath, "IdentityHelpDesk.pfx"), "12345678");
+
             services.AddIdentityServer()
-                .AddTemporarySigningCredential()
+                .AddSigningCredential(cert)
+                //.AddTemporarySigningCredential()
                 .AddInMemoryPersistedGrants()
                 .AddInMemoryIdentityResources(Config.GetIdentityResources())
                 .AddInMemoryApiResources(Config.GetApiResources())
